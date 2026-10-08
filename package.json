@@ -1,7 +1,7 @@
 {
-  "name": "autional-cn-demo",
+  "name": "autional-demo",
   "private": true,
-  "description": "demo.autional.cn — Vercel reverse-proxy entry for the demo portal",
+  "description": "demo.autional.com / demo.autional.cn — Vercel reverse-proxy entry for the demo portal",
   "dependencies": {
     "@vercel/config": "^0.7.2"
   }

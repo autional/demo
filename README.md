@@ -1,22 +1,22 @@
 # demo
 
-`demo.autional.cn` 的**演示单域入口**（Vercel 反向代理）。
+`demo.autional.com` / `demo.autional.cn` 的**演示单域入口**（Vercel 反向代理；项目 `demo` / `cn-demo`，同源双区：同一份代码、两个项目按环境变量分区域）。
 
 本仓**不含任何业务代码**，只承载一个反向代理配置。
 
 ## 职责
 
 ```
-浏览器 -> demo.autional.cn/            （门户页，27 服务卡）
-       -> demo.autional.cn/<slug>/     （各服务演示台，如 /session/、/storage/）
+浏览器 -> demo.autional.<区域域>/       （门户页，27 服务卡）
+       -> demo.autional.<区域域>/<slug>/（各服务演示台，如 /session/、/storage/）
        -> Vercel rewrite（服务端转发，不改地址栏）
        -> 门户面：  ${DEMO_ORIGIN}/...                     （原样透传）
        -> 演示台：  https://<svc>-demo.${DEMO_SUBDOMAIN_BASE}/<page>
 ```
 
-- 对外唯一演示域名 = **`demo.autional.cn`**（Vercel，境外 -> 不触发 ICP）
-- **单域路径化**：27 个演示台收敛为 `demo.autional.cn/<slug>/`；内部目标仍是 `<svc>-demo.<域>` 子域，但只出现在**服务端转发目标**里，浏览器不可见，ingress / 服务侧路由零改造
-- 门户面只代理所需路径（`/`、`/demos.html`、`/demo`、`/demo/*`、`/health`、`/ready`）；对外 API 面走 `api.autional.cn`，本仓不重复暴露
+- 对外演示域名 = **`demo.autional.com`**（项目 `demo`）/ **`demo.autional.cn`**（项目 `cn-demo`）（Vercel，境外 -> 不触发 ICP）
+- **单域路径化**：27 个演示台收敛为 `demo.autional.<区域域>/<slug>/`；内部目标仍是 `<svc>-demo.<域>` 子域，但只出现在**服务端转发目标**里，浏览器不可见，ingress / 服务侧路由零改造
+- 门户面只代理所需路径（`/`、`/demos.html`、`/demo`、`/demo/*`、`/health`、`/ready`）；对外 API 面走区域 api 入口，本仓不重复暴露
 - 原 27 个 `<svc>-demo.<域>` 子域**保留**为内部/调试入口（不再是对外卡片口径）
 
 ## 路由规则（`vercel.ts`）
@@ -71,7 +71,7 @@
 
 **裁剪记录**：`/admin/`、`/scalar/*`、`/fonts/*`、`/assets/*` 不映射 —— combined-bin 制品不含 gateway `web/` 静态树（旧子域同 404，存量非本次引入）。`/docs` 页 HTML 本身 200，但 Scalar 渲染依赖的 `/scalar/api-reference.js` 同样 404（存量缺口，已登记）。
 
-> `/demos.html` 保持既有规则（回门户）；`/demo/*` 复用现有规则（源站 `cn` 提供同套 demokit 资源，全舰队一致，不新增规则）。
+> `/demos.html` 保持既有规则（回门户）；`/demo/*` 复用现有规则（源站提供同套 demokit 资源，全舰队一致，不新增规则）。
 
 ## 内容
 
@@ -80,7 +80,7 @@
 | `vercel.ts` | 生成式规则：27×（redirect + 2 rewrite）+ gateway 根级组 7 条 + 门户面 6 条（`/`、`/demos.html`、`/demo`、`/demo/*`、`/health`、`/ready`） |
 | `package.json` | 仅依赖 `@vercel/config`（`vercel.ts` 的运行时/类型） |
 | `public/robots.txt` | 演示环境不索引（`Disallow: /`） |
-| `LICENSE` | AGPL-3.0（与 `autional-cn/*` 一致） |
+| `LICENSE` | AGPL-3.0 |
 
 ## 配置
 
@@ -103,11 +103,9 @@
 - 源站/子域根变更只改环境变量、不改本仓；本仓变更 = 改代理路径面；**新增/删除服务 = 改 `PAGES` 数组**（唯一扩展点）。
 - 通用坑（本仓两案实证）：Vercel `:path*` **空捕获会带斜杠**，叠加源站「尾斜杠 301 回无斜杠」= 重定向环；本仓以「redirect 前置 + 精确规则 + `:path+`」根治。改写规则前先读 `vercel.ts` 顶部注释。
 - 演示台页面引用 `/demo/assets/*` 走既有规则；ui-demo（demokit）已相对化（`dk.request` 剥前导 `/`），一版兼容根挂载与前缀挂载两种形态。
-- 改动本仓 = 改 `demo.autional.cn` 的代理行为；改完 push 即自动部署。
+- 改动本仓 = 改两区 `demo.autional.<区域域>` 的代理行为；改完 push 即自动部署（两个项目各自监听本仓 main）。
 - 探针一律用 **GET**（源站静态页 HEAD 恒 404，`curl -I` 会假红）。
 
 ## 关联
 
-- 设计依据：`AUTIONAL-CN-DEPLOY-PLAN.md`（单一后端入口 + 环境级源站域名选路）；单域路径化批 = 计划 `zany-booping-biscuit`（P1 打样 3 slug -> P2 全量 26）
-- 执行/运维记录：`AUTIONAL-CN-DEPLOY-EXECUTION-LOG.md`；`docs/CLOUD-DEV-INFRA.md` §23（机制/验证/回滚）
-- 同模式参照：`autional-cn/api`（cn-api 仓）
+- 同模式参照：`api` 仓（同为 env 化反代配置，两区同构）。

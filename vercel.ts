@@ -1,37 +1,36 @@
 import { routes, type VercelConfig } from '@vercel/config/v1';
 
 /**
- * 演示门户入口 `demo.autional.cn` 的唯一源站。
+ * 演示门户入口 `demo.autional.com` / `demo.autional.cn` 的唯一源站（同源双区，同一份代码）。
  *
  * 值 **不写入本仓**，取自 Vercel 项目环境变量 `DEMO_ORIGIN`
  * （Project -> Settings -> Environment Variables）。
  * 未设置时 **故意抛错**（fail-closed），避免静默产出坏路由。
  *
- * 过渡期：`DEMO_ORIGIN=https://cn.autional.tianv.mobi`（与 cn-api 同一 tianv.mobi 桥，
- * dev 单实例；该 host 已验证可服务门户全部路径，且走 ingress `cn.` 分支保留真实客户端 IP）。
+ * 区域差异（源站 host / 内部子域根）全部由各项目环境变量承担。
  */
 const rawOrigin = process.env.DEMO_ORIGIN;
 
 if (!rawOrigin) {
   throw new Error(
-    '[cn-demo] 缺少环境变量 DEMO_ORIGIN（Vercel 项目设置里配置后重新部署）',
+    '[demo] 缺少环境变量 DEMO_ORIGIN（Vercel 项目设置里配置后重新部署）',
   );
 }
 
 const ORIGIN = rawOrigin.replace(/\/+$/, '');
 
 /**
- * 演示台单域路径化的内部子域根（**不写死 .tianv.mobi**，同样 fail-closed）。
+ * 演示台单域路径化的内部子域根（**不写死子域根**，同样 fail-closed）。
  *
- * `DEMO_SUBDOMAIN_BASE=autional.tianv.mobi` =>
+ * `DEMO_SUBDOMAIN_BASE=autional.tianv.mobi`（示例） =>
  *   `/session/` 转发到 `https://session-demo.autional.tianv.mobi/session-demo.html`。
- * tianv.mobi 只出现在服务端转发目标里，浏览器不可见；对外唯一域名 = demo.autional.cn。
+ * 内部子域根只出现在服务端转发目标里、浏览器不可见；对外域名 = demo.autional.com / demo.autional.cn。
  */
 const rawSubBase = process.env.DEMO_SUBDOMAIN_BASE;
 
 if (!rawSubBase) {
   throw new Error(
-    '[cn-demo] 缺少环境变量 DEMO_SUBDOMAIN_BASE（Vercel 项目设置里配置后重新部署）',
+    '[demo] 缺少环境变量 DEMO_SUBDOMAIN_BASE（Vercel 项目设置里配置后重新部署）',
   );
 }
 
@@ -119,7 +118,7 @@ const gatewayRootRewrites = [
  *   /ready       -> 门户同源存活探针
  *
  * 规则顺序：先门户面（具体路径），再 slug 组，最后 gateway 根级组（`/bff/*` 等泛前缀
- * 放最后，避免先于更具体的规则命中）。对外 API 面走 api.autional.cn（cn-api 仓），
+ * 放最后，避免先于更具体的规则命中）。对外 API 面走区域 api 入口（`api` / `cn-api` 项目），
  * 本仓不重复暴露。
  */
 export const config: VercelConfig = {
